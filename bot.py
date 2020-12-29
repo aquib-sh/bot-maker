@@ -52,22 +52,24 @@ class BotMaker:
         # Setup seleniumm webdriver based on current operating system.
         opts = Options()
         opts.headless = behead
+        drivers_dir = os.path.join("resources","drivers")
+
         
         if sys.platform == "darwin":
-            d_dir  = os.path.join("resources", "macos") 
+            d_dir  = os.path.join(drivers_dir, "macos") 
             path   = os.path.join(d_dir,"geckodriver")
             self.driver = webdriver.Firefox(options=opts, executable_path = path, firefox_binary = "/Applications/Firefox.app/Contents/MacOS/firefox-bin")
         
         elif sys.platform == "linux":
-            d_dir  = os.path.join("resources", "linux")  
+            d_dir  = os.path.join(drivers_dir, "linux")  
             path   = os.path.join(d_dir, "geckodriver")
             self.driver = webdriver.Firefox(options=opts, executable_path = path, firefox_binary = "/usr/bin/firefox-esr")
 
         elif sys.platform == "win32":
-            d_dir  = os.path.join("resources", "windows") 
+            d_dir  = os.path.join(drivers_dir, "windows") 
             path   = os.path.join(d_dir, "geckodriver.exe")
             self.driver = webdriver.Firefox(options=opts, executable_path = path)
-        
+            
     # ============== Getters ==================
     def get_driver(self):
         return self.driver
@@ -78,24 +80,25 @@ class BotMaker:
     def get_xpath(self):
         return self.XPATHS
 
-    def get_element(self, xpath, elem=None):
-        """ elem parameter will be used when you need to get elements within another 
-            instead of driver. """      
+    def get_element(self, xpath, elem=None):      
         if elem != None:
             return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.XPATH, xpath)))
         return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.XPATH, xpath)))
 
     def get_elements(self, xpath, elem=None):
-        """ elem parameter will be used when you need to get elements within another 
-            instead of driver. """
         if elem != None:
             return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.XPATH, xpath)))
         return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
 
     def get_element_by_id(self, id_, elem=None):
         if elem != None:
-            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.XPATH, xpath)))
+            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.ID, id_)))
         return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.ID, id_)))
+
+    def get_element_by_class(self, class_name, elem=None):
+        if elem != None:
+            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.CLASS_NAME, class_name)))
+        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.CLASS_NAME, class_name)))
 
     # ============== Setters ==================
     def set_xpath(self, mod_xpath):
@@ -142,17 +145,13 @@ class BotMaker:
             (By.XPATH, xpath)
             )).send_keys(key_data)
 
-    def login(self, driver, login_url, email, password):
-        """ Logs into the website with given user and password. """
-        # Open URL
-        driver.get(login_url)
+    def page_source(self):
+        return self.driver.page_source
 
-        # Click on the login popup and fill the form
-        if self.XPATHS['login_popup'] != None:
-            driver.find_element_by_xpath(self.XPATHS['login_popup']).click()
-            self.upload_keys(self.XPATHS['email'], email) 
+    def execute_script(self, command):
+        return self.driver.execute_script(command)
 
-        self.upload_keys(self.XPATHS['password'], password) 
-        
-        # Click on submit button
-        driver.find_element_by_xpath(self.XPATHS['sign_button']).click()
+    def shutdown(self):
+        self.driver.quit()
+
+
