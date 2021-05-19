@@ -8,19 +8,29 @@ import os
 import sys
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, StaleElementReferenceException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.common.by import By 
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
 
 class BotOptions:
-    def setup_chrome(self, driver_path, behead):
+    def setup_chrome(self, driver_path, behead, page_load_strategy=None):
         opts = webdriver.ChromeOptions()
         opts.headless = behead
         dpath = driver_path
+
+        capa = None
+        if page_load_strategy:
+            capa = DesiredCapabilities.CHROME
+            capa['pageLoadStrategy'] = page_load_strategy
+
         if sys.platform == "win32":
             dpath = os.path.abspath(dpath) + ".exe"
-        return webdriver.Chrome(options=opts, executable_path=dpath)
+        return webdriver.Chrome(options=opts, executable_path=dpath, desired_capabilities=capa)
 
     def setup_firefox(self, driver_path, behead):
         opts = webdriver.FirefoxOptions()
@@ -38,7 +48,7 @@ class BotOptions:
 
 
 class BotMaker:
-    def __init__(self, behead=False, browser="Firefox"):
+    def __init__(self, behead=False, browser="Firefox", page_load_strategy=None):
         dir_driver = os.path.join("resources", "drivers")
 
         if sys.platform == "win32":
@@ -60,8 +70,7 @@ class BotMaker:
         elif browser == "Edge":
             self.driver = bot_ops.setup_edge(edge_driver)
         elif browser == "Chrome":
-            self.driver = bot_ops.setup_chrome(chrome_driver, behead)
-
+            self.driver = bot_ops.setup_chrome(chrome_driver, behead, page_load_strategy=page_load_strategy)
         self.DEFAULT_WAIT = 10
 
     def move(self, link):
@@ -85,7 +94,14 @@ class BotMaker:
 
     def shutdown(self):
         self.driver.quit()
-    
+
+    def create_wait(self, timeout):
+        wait = WebDriverWait(self.driver, 20)
+        return wait
+
+    def wait_until_found_xpath(self, wait_obj, xpath):
+        wait_obj.until(EC.presence_of_element_located((By.XPATH, xpath)))        
+
     def get_source(self, elem=None):
         if elem == None:
             elem = self.driver
@@ -100,18 +116,6 @@ class BotMaker:
         if elem != None:
             return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.XPATH, xpath)))
         return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_element_located((By.XPATH, xpath)))
-
-    def get_elements(self, xpath, elem=None):
-        """ Return a list of elements by searching through Xpath. """
-        if elem != None:
-            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
-        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
-
-    def get_elements_by_tag(self, tag, elem=None):
-        """ Return elements by searching through tag name. """
-        if elem != None:
-            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.TAG_NAME, tag)))
-        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.TAG_NAME, tag)))
 
     def get_element_by_id(self, id_, elem=None):
         """ Return element by searching through id. """
@@ -146,4 +150,35 @@ class BotMaker:
         return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.element_to_be_clickable(
             (By.CSS_SELECTOR, selector)
             ))
+        
+    def get_elements(self, xpath, elem=None):
+        """ Return a list of elements by searching through Xpath. """
+        if elem != None:
+            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
+        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.XPATH, xpath)))
+
+    def get_elements_by_tag(self, tag, elem=None):
+        """ Return elements by searching through tag name. """
+        if elem != None:
+            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.TAG_NAME, tag)))
+        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.TAG_NAME, tag)))
+
+    def get_elements_by_id(self, id_, elem=None):
+        """ Return element by searching through id. """
+        if elem != None:
+            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.ID, id_)))
+        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.ID, id_)))
+
+    def get_elements_by_class(self, class_name, elem=None):
+        """ Return element by searching through class name. """
+        if elem != None:
+            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.CLASS_NAME, class_name)))
+        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.CLASS_NAME, class_name)))
     
+    def get_elements_by_css_selector(self, selector, elem=None):
+        """ Return an element based on search by css selector. """
+        if elem != None:
+            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)))
+        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.presence_of_all_elements_located(
+            (By.CSS_SELECTOR, selector)
+            ))
