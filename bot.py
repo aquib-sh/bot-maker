@@ -6,6 +6,7 @@
 
 import os
 import sys
+import undetected_chromedriver.v2 as uc
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchElementException
@@ -18,9 +19,29 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 class BotOptions:
-    def setup_chrome(self, driver_path, behead, page_load_strategy=None):
+    def setup_chrome(self, driver_path, behead, undetected=False, page_load_strategy=None, profile_path:str=None):
+        """Returns Chrome Driver object depending on the parameters. 
+        
+        Parameters
+        ----------
+        driver_path: str
+            Path of the webdriver executable_path
+            
+        behead: bool
+            Whether to have headless browser or normal.
+        
+        undetected: bool (OPTIONAL DEFAULT=False)
+            Whether to initialize undetected_chromedriver instead of chrome_driver
+        
+        load_profile: str (OPTIONAL DEFAULT=None)
+            Path of the browser profile to use
+        """
         opts = webdriver.ChromeOptions()
         opts.headless = behead
+        
+        if profile_path:
+            opts.add_argument(f"user-data-dir={profile_path}")
+            
         dpath = driver_path
 
         capa = None
@@ -30,6 +51,7 @@ class BotOptions:
 
         if sys.platform == "win32":
             dpath = os.path.abspath(dpath) + ".exe"
+        if undetected : return uc.Chrome(options=opts, executable_path=dpath)
         return webdriver.Chrome(options=opts, executable_path=dpath, desired_capabilities=capa)
 
     def setup_firefox(self, driver_path, behead):
@@ -48,7 +70,7 @@ class BotOptions:
 
 
 class BotMaker:
-    def __init__(self, behead=False, browser="Firefox", page_load_strategy=None):
+    def __init__(self, behead=False, browser="Firefox", undetected=False, page_load_strategy=None, load_profile:str=None):
         dir_driver = os.path.join("resources", "drivers")
 
         if sys.platform == "win32":
@@ -70,7 +92,7 @@ class BotMaker:
         elif browser == "Edge":
             self.driver = bot_ops.setup_edge(edge_driver)
         elif browser == "Chrome":
-            self.driver = bot_ops.setup_chrome(chrome_driver, behead, page_load_strategy=page_load_strategy)
+            self.driver = bot_ops.setup_chrome(chrome_driver, behead, undetected=undetected, page_load_strategy=page_load_strategy, profile_path=load_profile)
         self.DEFAULT_WAIT = 10
 
     def move(self, link):
@@ -143,7 +165,15 @@ class BotMaker:
             (By.CSS_SELECTOR, selector)
             ))
             
-    def get_interactable_element(self, selector, elem=None):
+    def get_interactable_element(self, xpath, elem=None):
+        """ Waits for element to be interactable before clicking by xpath. """
+        if elem != None:
+            return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.element_to_be_clickable((By.XPATH, xpath)))
+        return WebDriverWait(self.driver, self.DEFAULT_WAIT).until(EC.element_to_be_clickable(
+            (By.XPATH, xpath)
+            ))
+
+    def get_interactable_element_by_css_selector(self, selector, elem=None):
         """ Waits for element to be interactable before clicking by css selector. """
         if elem != None:
             return WebDriverWait(elem, self.DEFAULT_WAIT).until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
