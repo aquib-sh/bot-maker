@@ -7,11 +7,13 @@
 import os
 import sys
 import undetected_chromedriver.v2 as uc
+import seleniumwire.webdriver as wired_webdriver
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.webdriver.common.proxy import Proxy, ProxyType
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.by import By 
 from selenium.webdriver.support import expected_conditions as EC
@@ -54,13 +56,34 @@ class BotOptions:
         if undetected : return uc.Chrome(options=opts, executable_path=dpath)
         return webdriver.Chrome(options=opts, executable_path=dpath, desired_capabilities=capa)
 
-    def setup_firefox(self, driver_path, behead):
+    def setup_firefox(self, driver_path, behead, proxy_info: dict=None):
         opts = webdriver.FirefoxOptions()
+        
+        profile = webdriver.FirefoxProfile() 
+        profile.set_preference("dom.webdriver.enabled", False)
+        profile.set_preference('useAutomationExtension', False)
+        
+        profile.update_preferences()
+        desired = DesiredCapabilities.FIREFOX
+
         opts.headless = behead
         dpath = driver_path
         if sys.platform == "win32":
             dpath += ".exe"
-        return webdriver.Firefox(options=opts, executable_path=dpath)
+        
+        options = None
+        if proxy_info:
+            options = {
+                'proxy':{
+                    'http':f"http://{proxy_info['Username']}:{proxy_info['Password']}@{proxy_info['PROXY IP:PORT (HTTP)']}",
+                    'https':f"https://{proxy_info['Username']}:{proxy_info['Password']}@{proxy_info['PROXY IP:PORT (HTTP)']}",
+                }
+            }
+            return wired_webdriver.Firefox(options=opts, executable_path=dpath,
+                firefox_profile=profile, desired_capabilities=desired, seleniumwire_options=options)
+
+        return webdriver.Firefox(options=opts, executable_path=dpath,
+                firefox_profile=profile, desired_capabilities=desired)
 
     def setup_edge(self, driver_path):
         dpath = driver_path
@@ -70,7 +93,32 @@ class BotOptions:
 
 
 class BotMaker:
-    def __init__(self, behead=False, browser="Firefox", undetected=False, page_load_strategy=None, load_profile:str=None):
+    """BotMaker: Simplifies creating and using Selenium WebDriver
+
+    Parameters
+    ----------
+    behead: bool (DEFAULT=False) (Optional)
+        creates the bot in headless mode if set to True.
+
+    browser: str (DEFAULT="Firefox")
+        Browser to use for BotMaker.
+        browser must be in ['Firefox', 'Chrome', 'Edge']
+
+    undetected: bool (DEFAULT=False) (Optional)
+        Uses the undetected_chromedriver instead of normal chrome driver, 
+        This avoids the bot detection to a certain extent.
+        (ONLY FOR GOOGLE CHROME)
+
+    proxy_info: dict (DEFAULT=None) (Optional)
+        Information about the proxy to use (if want to)
+        example of proxy_info dict given below:
+        proxy_info = {
+            'Username':'xyz',
+            'Password':'123klu456',
+            'PROXY IP:PORT (HTTP)':'ip_address:port_number',
+        }
+    """
+    def __init__(self, behead=False, browser="Firefox", undetected=False, page_load_strategy=None, load_profile:str=None, proxy_info:dict=None):
         dir_driver = os.path.join("resources", "drivers")
 
         if sys.platform == "win32":
@@ -88,7 +136,7 @@ class BotMaker:
 
         self.driver = None
         if browser == "Firefox":
-            self.driver = bot_ops.setup_firefox(firefox_driver, behead)
+            self.driver = bot_ops.setup_firefox(firefox_driver, behead, proxy_info=proxy_info)
         elif browser == "Edge":
             self.driver = bot_ops.setup_edge(edge_driver)
         elif browser == "Chrome":
