@@ -56,10 +56,38 @@ class BotOptions:
         if undetected : return uc.Chrome(options=opts, executable_path=dpath)
         return webdriver.Chrome(options=opts, executable_path=dpath, desired_capabilities=capa)
 
-    def setup_firefox(self, driver_path, behead, proxy_info: dict=None):
+    def setup_firefox(self, driver_path, behead, proxy_info: dict=None, firefox_profile: str=None):
+        """Returns Firefox Driver object depending on the parameters. 
+        
+        Parameters
+        ----------
+        driver_path: str
+            Path of the webdriver executable_path
+            
+        behead: bool
+            Whether to have headless browser or normal.
+            
+        proxy_info: dict (DEFAULT=None) (Optional)
+            Information about the proxy to use (if want to)
+            example of proxy_info dict given below:
+            proxy_info = {
+                'Username':'xyz',
+                'Password':'123klu456',
+                'PROXY IP:PORT (HTTP)':'ip_address:port_number',
+            }
+        
+        firefox_profile: str (OPTIONAL DEFAULT=None)
+            Path of the browser profile to use
+            example: r"C:\Users\Tom\AppData\Roaming\Mozilla\Firefox\Profiles\zcpexa0p.myuser"
+        """
         opts = webdriver.FirefoxOptions()
         
-        profile = webdriver.FirefoxProfile() 
+        profile = None
+        if firefox_profile:
+            profile = webdriver.FirefoxProfile(firefox_profile) 
+        else:
+            profile = webdriver.FirefoxProfile()
+            
         profile.set_preference("dom.webdriver.enabled", False)
         profile.set_preference('useAutomationExtension', False)
         
@@ -117,8 +145,13 @@ class BotMaker:
             'Password':'123klu456',
             'PROXY IP:PORT (HTTP)':'ip_address:port_number',
         }
+        
+    firefox_profile: str (OPTIONAL DEFAULT=None)
+        Path of the browser profile to use
+        example: r"C:\Users\Tom\AppData\Roaming\Mozilla\Firefox\Profiles\zcpexa0p.myuser"
     """
-    def __init__(self, behead=False, browser="Firefox", undetected=False, page_load_strategy=None, load_profile:str=None, proxy_info:dict=None):
+    def __init__(self, behead=False, browser="Firefox", undetected=False, 
+        page_load_strategy=None, load_profile:str=None, proxy_info:dict=None, firefox_profile:str=None):
         dir_driver = os.path.join("resources", "drivers")
 
         if sys.platform == "win32":
@@ -136,7 +169,7 @@ class BotMaker:
 
         self.driver = None
         if browser == "Firefox":
-            self.driver = bot_ops.setup_firefox(firefox_driver, behead, proxy_info=proxy_info)
+            self.driver = bot_ops.setup_firefox(firefox_driver, behead, proxy_info=proxy_info, firefox_profile=firefox_profile)
         elif browser == "Edge":
             self.driver = bot_ops.setup_edge(edge_driver)
         elif browser == "Chrome":
