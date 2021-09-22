@@ -78,7 +78,6 @@ class BotOptions:
         
         firefox_profile: str (OPTIONAL DEFAULT=None)
             Path of the browser profile to use
-            example: r"C:\Users\Tom\AppData\Roaming\Mozilla\Firefox\Profiles\zcpexa0p.myuser"
         """
         opts = webdriver.FirefoxOptions()
         
@@ -148,7 +147,6 @@ class BotMaker:
         
     firefox_profile: str (OPTIONAL DEFAULT=None)
         Path of the browser profile to use
-        example: r"C:\Users\Tom\AppData\Roaming\Mozilla\Firefox\Profiles\zcpexa0p.myuser"
     """
     def __init__(self, behead=False, browser="Firefox", undetected=False, 
         page_load_strategy=None, load_profile:str=None, proxy_info:dict=None, firefox_profile:str=None):
