@@ -6,6 +6,8 @@
 
 import os
 import sys
+import time
+import random
 import undetected_chromedriver.v2 as uc
 import seleniumwire.webdriver as wired_webdriver
 from selenium import webdriver
@@ -177,6 +179,12 @@ class BotMaker:
     def move(self, link):
         """ Move on to certian link. """
         self.driver.get(link)
+
+    def send_human_keys(element, _key):
+        element.clear()
+        for letter in _key:
+            element.send_keys(letter)
+            time.sleep(random.random())
 
     def upload_keys(self, xpath, key_data):
         """ Sends key to the input element by xpath. """
