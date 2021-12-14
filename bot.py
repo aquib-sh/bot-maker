@@ -23,6 +23,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 
 class BotOptions:
+    def __init__(self):
+        self.CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
+
     def setup_chrome(self, driver_path, behead, undetected=False, page_load_strategy=None, profile_path:str=None):
         """Returns Chrome Driver object depending on the parameters. 
         
@@ -47,6 +50,7 @@ class BotOptions:
             opts.add_argument(f"user-data-dir={profile_path}")
             
         dpath = driver_path
+        dpath = os.path.join(self.CURRENT_DIR, dpath)
 
         capa = None
         if page_load_strategy:
@@ -100,6 +104,8 @@ class BotOptions:
         if sys.platform == "win32":
             dpath += ".exe"
         
+        dpath = os.path.join(self.CURRENT_DIR, dpath)
+
         options = None
         if proxy_info:
             options = {
@@ -180,7 +186,7 @@ class BotMaker:
         """ Move on to certian link. """
         self.driver.get(link)
 
-    def send_human_keys(element, _key):
+    def send_human_keys(self, element, _key):
         element.clear()
         for letter in _key:
             element.send_keys(letter)
