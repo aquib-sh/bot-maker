@@ -8,8 +8,6 @@ import os
 import sys
 import time
 import random
-import undetected_chromedriver.v2 as uc
-import seleniumwire.webdriver as wired_webdriver
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import NoSuchElementException
@@ -26,7 +24,7 @@ class BotOptions:
     def __init__(self):
         self.CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-    def setup_chrome(self, driver_path, behead, undetected=False, page_load_strategy=None, profile_path:str=None):
+    def setup_chrome(self, driver_path, behead, undetected=False, page_load_strategy=None, profile_path:str=None, remote=False, port=8989):
         """Returns Chrome Driver object depending on the parameters. 
         
         Parameters
@@ -44,22 +42,27 @@ class BotOptions:
             Path of the browser profile to use
         """
         opts = webdriver.ChromeOptions()
+
+        dpath = driver_path
+        dpath = os.path.join(self.CURRENT_DIR, dpath)
+        if sys.platform == "win32":
+            dpath = os.path.abspath(dpath) + ".exe"
+
+        # remote debugging
+        if (remote):
+            opts.add_experimental_option("debuggerAddress", "localhost:{}".format(port))
+            return webdriver.Chrome(executable_path=dpath, chrome_options=opts)
+        
         opts.headless = behead
         
         if profile_path:
             opts.add_argument(f"user-data-dir={profile_path}")
             
-        dpath = driver_path
-        dpath = os.path.join(self.CURRENT_DIR, dpath)
-
         capa = None
         if page_load_strategy:
             capa = DesiredCapabilities.CHROME
             capa['pageLoadStrategy'] = page_load_strategy
 
-        if sys.platform == "win32":
-            dpath = os.path.abspath(dpath) + ".exe"
-        if undetected : return uc.Chrome(options=opts, executable_path=dpath)
         return webdriver.Chrome(options=opts, executable_path=dpath, desired_capabilities=capa)
 
     def setup_firefox(self, driver_path, behead, proxy_info: dict=None, firefox_profile: str=None):
@@ -106,17 +109,6 @@ class BotOptions:
         
         dpath = os.path.join(self.CURRENT_DIR, dpath)
 
-        options = None
-        if proxy_info:
-            options = {
-                'proxy':{
-                    'http':f"http://{proxy_info['Username']}:{proxy_info['Password']}@{proxy_info['PROXY IP:PORT (HTTP)']}",
-                    'https':f"https://{proxy_info['Username']}:{proxy_info['Password']}@{proxy_info['PROXY IP:PORT (HTTP)']}",
-                }
-            }
-            return wired_webdriver.Firefox(options=opts, executable_path=dpath,
-                firefox_profile=profile, desired_capabilities=desired, seleniumwire_options=options)
-
         return webdriver.Firefox(options=opts, executable_path=dpath,
                 firefox_profile=profile, desired_capabilities=desired)
 
@@ -157,7 +149,9 @@ class BotMaker:
         Path of the browser profile to use
     """
     def __init__(self, behead=False, browser="Firefox", undetected=False, 
-        page_load_strategy=None, load_profile:str=None, proxy_info:dict=None, firefox_profile:str=None):
+        page_load_strategy=None, load_profile:str=None, proxy_info:dict=None, 
+        firefox_profile:str=None, remote=False, port=8989):
+        
         dir_driver = os.path.join("resources", "drivers")
 
         if sys.platform == "win32":
@@ -179,7 +173,7 @@ class BotMaker:
         elif browser == "Edge":
             self.driver = bot_ops.setup_edge(edge_driver)
         elif browser == "Chrome":
-            self.driver = bot_ops.setup_chrome(chrome_driver, behead, undetected=undetected, page_load_strategy=page_load_strategy, profile_path=load_profile)
+            self.driver = bot_ops.setup_chrome(chrome_driver, behead, undetected=undetected, page_load_strategy=page_load_strategy, profile_path=load_profile, remote=remote, port=port)
         self.DEFAULT_WAIT = 10
 
     def move(self, link):
