@@ -210,6 +210,16 @@ class BotMaker:
 
     def wait_until_found_xpath(self, wait_obj, xpath):
         wait_obj.until(EC.presence_of_element_located((By.XPATH, xpath)))        
+        
+    def switch_to_tab(self, tab_no):
+        desired_window = self.driver.window_handles[tab_no]
+        self.driver.switch_to.window(desired_window)
+
+    def switch_to_recently_opened_tab(self):
+        self.switch_to_tab(-1)
+
+    def switch_to_first_tab(self):
+        self.switch_to_tab(0)
 
     def get_source(self, elem=None):
         if elem == None:
