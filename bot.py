@@ -216,6 +216,10 @@ class BotMaker:
             elem = self.driver
         return elem.page_source
 
+    def get_url(self):
+        """Returns current url."""
+        return self.driver.current_url
+
     def get_driver(self):
         """ Returns Driver. """
         return self.driver
